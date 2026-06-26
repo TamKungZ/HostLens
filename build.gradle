@@ -116,28 +116,49 @@ publishing {
     }
 }
 
+def centralPublishRequested = gradle.startParameter.taskNames.any { taskName ->
+    def name = taskName.toLowerCase(Locale.ROOT)
+
+    name.contains('centralportal') ||
+            name.contains('centralsnapshots') ||
+            name.contains('nmcppublish') ||
+            name.contains('nmcprelease') ||
+            name.contains('publishaggregationtocentralportal')
+}
+
+def signingKey = providers.gradleProperty('signingInMemoryKey')
+        .orElse(providers.environmentVariable('SIGNING_IN_MEMORY_KEY'))
+        .orNull
+
+def signingPassword = providers.gradleProperty('signingInMemoryKeyPassword')
+        .orElse(providers.environmentVariable('SIGNING_IN_MEMORY_KEY_PASSWORD'))
+        .orNull
+
+def signingKeyId = providers.gradleProperty('signingInMemoryKeyId')
+        .orElse(providers.environmentVariable('SIGNING_IN_MEMORY_KEY_ID'))
+        .orNull
+
 signing {
-    def signingKey = findProperty('signingInMemoryKey')
-    def signingPassword = findProperty('signingInMemoryKeyPassword')
-
-    def isSonatypeCentralPublish = {
-        gradle.taskGraph.allTasks.any { task ->
-            def name = task.name.toLowerCase(Locale.ROOT)
-
-            name.contains('centralportal') ||
-                    name.contains('centralsnapshots') ||
-                    name.contains('nmcppublish') ||
-                    name.contains('nmcprelease')
-        }
-    }
-
     required {
-        isSonatypeCentralPublish()
+        centralPublishRequested
     }
 
     if (signingKey && signingPassword) {
-        useInMemoryPgpKeys(signingKey.toString(), signingPassword.toString())
-    } else if (isSonatypeCentralPublish()) {
+        def normalizedSigningKey = signingKey.toString().replace('\\n', '\n')
+
+        if (signingKeyId) {
+            useInMemoryPgpKeys(
+                    signingKeyId.toString(),
+                    normalizedSigningKey,
+                    signingPassword.toString()
+            )
+        } else {
+            useInMemoryPgpKeys(
+                    normalizedSigningKey,
+                    signingPassword.toString()
+            )
+        }
+    } else if (centralPublishRequested) {
         useGpgCmd()
     }
 
@@ -146,13 +167,6 @@ signing {
 
 tasks.withType(Sign).configureEach {
     onlyIf {
-        gradle.taskGraph.allTasks.any { task ->
-            def name = task.name.toLowerCase(Locale.ROOT)
-
-            name.contains('centralportal') ||
-                    name.contains('centralsnapshots') ||
-                    name.contains('nmcppublish') ||
-                    name.contains('nmcprelease')
-        }
+        centralPublishRequested
     }
 }
