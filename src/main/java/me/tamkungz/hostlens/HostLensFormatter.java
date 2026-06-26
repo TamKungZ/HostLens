@@ -61,6 +61,9 @@ public final class HostLensFormatter {
         } else {
             for (GpuInfo gpu : snapshot.gpus()) {
                 builder.append("- ").append(gpu.name());
+                if (!gpu.type().isBlank() && !"unknown".equalsIgnoreCase(gpu.type())) {
+                    builder.append(" [").append(gpu.type()).append(']');
+                }
                 if (!gpu.vendor().isBlank() && !"unknown".equalsIgnoreCase(gpu.vendor())) {
                     builder.append(" / ").append(gpu.vendor());
                 }

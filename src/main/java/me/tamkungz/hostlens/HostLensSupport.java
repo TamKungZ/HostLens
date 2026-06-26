@@ -16,7 +16,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 final class HostLensSupport {
-    private static final Duration COMMAND_TIMEOUT = Duration.ofSeconds(3);
+    private static final Duration COMMAND_TIMEOUT = Duration.ofSeconds(8);
 
     private HostLensSupport() {
     }
