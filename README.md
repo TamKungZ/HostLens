@@ -1,5 +1,7 @@
 # HostLens
 
+[![](https://jitpack.io/v/TamKungZ/HostLens.svg)](https://jitpack.io/#TamKungZ/HostLens)
+
 HostLens is a small Java 17 hardware / host information capture library.
 It uses only the JDK, so it does not require external dependencies.
 
