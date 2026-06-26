@@ -1,0 +1,101 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'maven-publish'
+}
+
+group = 'me.tamkungz.hostlens'
+version = '1.0.0'
+
+description = 'HostLens Java Application'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+
+    withSourcesJar()
+    withJavadocJar()
+}
+
+application {
+    mainClass = 'me.tamkungz.hostlens.HostLens'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+jar {
+    archiveBaseName = 'hostlens'
+
+    manifest {
+        attributes(
+            'Main-Class': application.mainClass.get(),
+            'Implementation-Title': project.name,
+            'Implementation-Version': project.version,
+            'Implementation-Vendor': 'TamKungZ',
+            'Implementation-Vendor-Id': project.group,
+            'Specification-Title': project.name,
+            'Specification-Version': project.version,
+            'Specification-Vendor': 'TamKungZ',
+            'Built-By': System.getProperty('user.name'),
+            'Built-JDK': System.getProperty('java.version'),
+            'Created-By': "Gradle ${gradle.gradleVersion}",
+            'Automatic-Module-Name': 'me.tamkungz.hostlens'
+        )
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            groupId = 'me.tamkungz'
+            artifactId = 'hostlens'
+            version = project.version
+
+            pom {
+                name = 'HostLens'
+                description = 'HostLens Java Application'
+                url = 'https://github.com/tamkungz/HostLens'
+
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = 'tamkungz'
+                        name = 'TamKungZ'
+                    }
+                }
+
+                scm {
+                    connection = 'scm:git:git://github.com/tamkungz/HostLens.git'
+                    developerConnection = 'scm:git:ssh://github.com/tamkungz/HostLens.git'
+                    url = 'https://github.com/tamkungz/HostLens'
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = 'localBuild'
+            url = layout.buildDirectory.dir('repo')
+        }
+    }
+}
