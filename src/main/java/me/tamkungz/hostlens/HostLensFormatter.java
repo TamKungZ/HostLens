@@ -14,11 +14,28 @@ public final class HostLensFormatter {
         if (snapshot.operatingSystem() != null) {
             OperatingSystemInfo os = snapshot.operatingSystem();
             builder.append("\n[Operating System]\n");
-            builder.append("Name        : ").append(os.name()).append(' ').append(os.version()).append('\n');
-            builder.append("Arch        : ").append(os.architecture()).append('\n');
+            builder.append("Name        : ").append(best(os.displayName(), os.name())).append('\n');
             builder.append("Family      : ").append(os.family()).append('\n');
+            builder.append("Version     : ").append(os.distributionVersion()).append('\n');
+            builder.append("Kernel      : ").append(os.kernelVersion()).append('\n');
+            if (!isUnknown(os.buildNumber())) {
+                builder.append("Build       : ").append(os.buildNumber()).append('\n');
+            }
+            if (!isUnknown(os.distribution())) {
+                builder.append("Distro      : ").append(os.distribution()).append('\n');
+            }
+            builder.append("Arch        : ").append(os.architecture()).append('\n');
+            if (!isUnknown(os.kernelArchitecture()) && !os.kernelArchitecture().equalsIgnoreCase(os.architecture())) {
+                builder.append("Kernel Arch : ").append(os.kernelArchitecture()).append('\n');
+            }
             builder.append("Host        : ").append(os.hostName()).append('\n');
             builder.append("User        : ").append(os.userName()).append('\n');
+            if (os.wsl()) {
+                builder.append("WSL         : true\n");
+            }
+            if (os.container()) {
+                builder.append("Container   : true\n");
+            }
         }
 
         if (snapshot.runtime() != null) {
@@ -139,6 +156,13 @@ public final class HostLensFormatter {
         return String.format(Locale.ROOT, "%.2f %s", value, units[unitIndex]);
     }
 
+    private static String best(String primary, String fallback) {
+        return isUnknown(primary) ? fallback : primary;
+    }
+
+    private static boolean isUnknown(String value) {
+        return value == null || value.isBlank() || "unknown".equalsIgnoreCase(value.trim());
+    }
 
     private static String formatCount(int value) {
         return value < 0 ? "unknown" : Integer.toString(value);
