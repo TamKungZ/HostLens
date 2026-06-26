@@ -1,5 +1,6 @@
 package me.tamkungz.hostlens;
 
+import java.time.Instant;
 import java.util.Locale;
 
 public final class HostLensFormatter {
@@ -41,11 +42,51 @@ public final class HostLensFormatter {
         if (snapshot.runtime() != null) {
             RuntimeInfo runtime = snapshot.runtime();
             builder.append("\n[Runtime]\n");
-            builder.append("Java        : ").append(runtime.javaVersion()).append(" / ").append(runtime.javaVendor()).append('\n');
-            builder.append("VM          : ").append(runtime.javaVmName()).append(" ").append(runtime.javaVmVersion()).append('\n');
+            builder.append("Java        : ").append(runtime.javaVersion());
+            if (runtime.javaMajorVersion() >= 0) {
+                builder.append(" (major ").append(runtime.javaMajorVersion()).append(')');
+            }
+            builder.append(" / ").append(runtime.javaVendor()).append('\n');
+            if (!isUnknown(runtime.javaVendorVersion())) {
+                builder.append("Vendor Ver. : ").append(runtime.javaVendorVersion()).append('\n');
+            }
+            builder.append("Runtime     : ").append(runtime.javaRuntimeName());
+            if (!isUnknown(runtime.javaRuntimeVersion())) {
+                builder.append(" ").append(runtime.javaRuntimeVersion());
+            }
+            builder.append('\n');
+            builder.append("Spec        : ").append(runtime.javaSpecificationName())
+                    .append(" ").append(runtime.javaSpecificationVersion()).append('\n');
+            builder.append("VM          : ").append(runtime.javaVmName())
+                    .append(" ").append(runtime.javaVmVersion());
+            if (!isUnknown(runtime.javaVmVendor())) {
+                builder.append(" / ").append(runtime.javaVmVendor());
+            }
+            builder.append('\n');
+            if (!isUnknown(runtime.javaVmInfo())) {
+                builder.append("VM Info     : ").append(runtime.javaVmInfo()).append('\n');
+            }
+            builder.append("Java Home   : ").append(runtime.javaHome()).append('\n');
             builder.append("PID         : ").append(runtime.processId()).append('\n');
+            builder.append("Started At  : ").append(formatEpochMillis(runtime.startTimeMillis())).append('\n');
             builder.append("Uptime      : ").append(runtime.uptimeMillis()).append(" ms\n");
+            builder.append("Processors  : ").append(formatCount(runtime.availableProcessors())).append('\n');
+            builder.append("Heap        : ").append(formatBytes(runtime.heapUsedBytes()))
+                    .append(" used / ").append(formatBytes(runtime.heapMaxBytes())).append(" max")
+                    .append(" / ").append(formatBytes(runtime.heapCommittedBytes())).append(" committed\n");
+            builder.append("Non-Heap    : ").append(formatBytes(runtime.nonHeapUsedBytes()))
+                    .append(" used / ").append(formatBytes(runtime.nonHeapCommittedBytes())).append(" committed\n");
+            builder.append("Encoding    : ").append(runtime.fileEncoding());
+            if (!isUnknown(runtime.nativeEncoding()) && !runtime.nativeEncoding().equalsIgnoreCase(runtime.fileEncoding())) {
+                builder.append(" / native ").append(runtime.nativeEncoding());
+            }
+            builder.append('\n');
+            builder.append("Locale      : ").append(runtime.defaultLocale()).append('\n');
+            builder.append("Charset     : ").append(runtime.defaultCharset()).append('\n');
             builder.append("Timezone    : ").append(runtime.timeZone()).append('\n');
+            if (!runtime.inputArguments().isEmpty()) {
+                builder.append("JVM Args    : ").append(runtime.inputArguments()).append('\n');
+            }
         }
 
         if (snapshot.cpu() != null) {
@@ -166,6 +207,13 @@ public final class HostLensFormatter {
 
     private static String formatCount(int value) {
         return value < 0 ? "unknown" : Integer.toString(value);
+    }
+
+    private static String formatEpochMillis(long value) {
+        if (value <= 0) {
+            return "unknown";
+        }
+        return Instant.ofEpochMilli(value).toString();
     }
 
     private static String formatMhz(double value) {
