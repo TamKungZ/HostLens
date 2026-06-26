@@ -35,8 +35,15 @@ public final class HostLensFormatter {
             CpuInfo cpu = snapshot.cpu();
             builder.append("\n[CPU]\n");
             builder.append("Name        : ").append(cpu.name()).append('\n');
+            if (!cpu.vendor().isBlank() && !"unknown".equalsIgnoreCase(cpu.vendor())) {
+                builder.append("Vendor      : ").append(cpu.vendor()).append('\n');
+            }
             builder.append("Arch        : ").append(cpu.architecture()).append('\n');
-            builder.append("Logical     : ").append(cpu.logicalCores()).append('\n');
+            builder.append("Physical    : ").append(formatCount(cpu.physicalCores())).append('\n');
+            builder.append("Logical     : ").append(formatCount(cpu.logicalCores())).append('\n');
+            builder.append("Available   : ").append(formatCount(cpu.availableProcessors())).append('\n');
+            builder.append("Packages    : ").append(formatCount(cpu.packageCount())).append('\n');
+            builder.append("Max Clock   : ").append(formatMhz(cpu.maxFrequencyMhz())).append('\n');
             builder.append("Load Avg    : ").append(formatDouble(cpu.systemLoadAverage())).append('\n');
             builder.append("System Load : ").append(formatPercent(cpu.systemCpuLoad())).append('\n');
             builder.append("Process Load: ").append(formatPercent(cpu.processCpuLoad())).append('\n');
@@ -130,6 +137,21 @@ public final class HostLensFormatter {
             unitIndex++;
         } while (value >= 1024.0 && unitIndex + 1 < units.length);
         return String.format(Locale.ROOT, "%.2f %s", value, units[unitIndex]);
+    }
+
+
+    private static String formatCount(int value) {
+        return value < 0 ? "unknown" : Integer.toString(value);
+    }
+
+    private static String formatMhz(double value) {
+        if (value < 0 || Double.isNaN(value) || Double.isInfinite(value)) {
+            return "unknown";
+        }
+        if (value >= 1000.0) {
+            return String.format(Locale.ROOT, "%.2f GHz", value / 1000.0);
+        }
+        return String.format(Locale.ROOT, "%.0f MHz", value);
     }
 
     private static String formatPercent(double value) {
