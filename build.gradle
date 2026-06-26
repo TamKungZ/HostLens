@@ -82,7 +82,7 @@ publishing {
                 developers {
                     developer {
                         id = 'tamkungz'
-                        name = 'TamKungZ'
+                        name = 'TamKungZ_'
                     }
                 }
 

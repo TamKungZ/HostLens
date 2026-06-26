@@ -158,12 +158,49 @@ public final class HostLensFormatter {
             builder.append("No network data found.\n");
         } else {
             for (NetworkInterfaceInfo network : snapshot.networks()) {
-                builder.append("- ").append(network.name())
-                        .append(" up=").append(network.up())
-                        .append(" loopback=").append(network.loopback())
-                        .append(" mac=").append(network.macAddress())
-                        .append(" addresses=").append(network.addresses())
-                        .append('\n');
+                builder.append("- ").append(network.name());
+                if (!isUnknown(network.type())) {
+                    builder.append(" [").append(network.type()).append(']');
+                }
+                if (network.primary()) {
+                    builder.append(" primary");
+                }
+                builder.append(" up=").append(network.up())
+                        .append(" status=").append(network.status())
+                        .append(" mtu=").append(network.mtu());
+                if (network.speedMbps() >= 0) {
+                    builder.append(" speed=").append(formatSpeedMbps(network.speedMbps()));
+                }
+                if (!isUnknown(network.macAddress())) {
+                    builder.append(" mac=").append(network.macAddress());
+                }
+                builder.append('\n');
+
+                if (!isUnknown(network.displayName()) && !network.displayName().equals(network.name())) {
+                    builder.append("  Display    : ").append(network.displayName()).append('\n');
+                }
+                if (!network.ipv4Addresses().isEmpty()) {
+                    builder.append("  IPv4       : ").append(network.ipv4Addresses()).append('\n');
+                }
+                if (!network.ipv6Addresses().isEmpty()) {
+                    builder.append("  IPv6       : ").append(network.ipv6Addresses()).append('\n');
+                }
+                if (!network.gateways().isEmpty()) {
+                    builder.append("  Gateway    : ").append(network.gateways()).append('\n');
+                }
+                if (!network.dnsServers().isEmpty()) {
+                    builder.append("  DNS        : ").append(network.dnsServers()).append('\n');
+                }
+                if (!isUnknown(network.dhcp())) {
+                    builder.append("  DHCP       : ").append(network.dhcp()).append('\n');
+                }
+                if (network.loopback() || network.virtual() || network.pointToPoint() || !network.multicast()) {
+                    builder.append("  Flags      : loopback=").append(network.loopback())
+                            .append(", virtual=").append(network.virtual())
+                            .append(", pointToPoint=").append(network.pointToPoint())
+                            .append(", multicast=").append(network.multicast())
+                            .append('\n');
+                }
             }
         }
 
@@ -224,6 +261,16 @@ public final class HostLensFormatter {
             return String.format(Locale.ROOT, "%.2f GHz", value / 1000.0);
         }
         return String.format(Locale.ROOT, "%.0f MHz", value);
+    }
+
+    private static String formatSpeedMbps(long value) {
+        if (value < 0) {
+            return "unknown";
+        }
+        if (value >= 1000) {
+            return String.format(Locale.ROOT, "%.2f Gbps", value / 1000.0);
+        }
+        return value + " Mbps";
     }
 
     private static String formatPercent(double value) {
