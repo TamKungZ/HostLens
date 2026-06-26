@@ -107,11 +107,39 @@ signing {
     def signingKey = findProperty('signingInMemoryKey')
     def signingPassword = findProperty('signingInMemoryKeyPassword')
 
+    def isSonatypeCentralPublish = {
+        gradle.taskGraph.allTasks.any { task ->
+            def name = task.name.toLowerCase(Locale.ROOT)
+
+            name.contains('centralportal') ||
+                    name.contains('centralsnapshots') ||
+                    name.contains('nmcppublish') ||
+                    name.contains('nmcprelease')
+        }
+    }
+
+    required {
+        isSonatypeCentralPublish()
+    }
+
     if (signingKey && signingPassword) {
-        useInMemoryPgpKeys(signingKey, signingPassword)
-    } else {
+        useInMemoryPgpKeys(signingKey.toString(), signingPassword.toString())
+    } else if (isSonatypeCentralPublish()) {
         useGpgCmd()
     }
 
     sign publishing.publications.mavenJava
+}
+
+tasks.withType(Sign).configureEach {
+    onlyIf {
+        gradle.taskGraph.allTasks.any { task ->
+            def name = task.name.toLowerCase(Locale.ROOT)
+
+            name.contains('centralportal') ||
+                    name.contains('centralsnapshots') ||
+                    name.contains('nmcppublish') ||
+                    name.contains('nmcprelease')
+        }
+    }
 }

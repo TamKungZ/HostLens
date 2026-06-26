@@ -19,32 +19,46 @@ dependencyResolutionManagement {
 
 rootProject.name = 'HostLens'
 
-def centralPortalUsernameProvider = providers.gradleProperty('centralPortalUsername')
-        .orElse(providers.environmentVariable('CENTRAL_PORTAL_USERNAME'))
+def readUserGradleProperty(String key) {
+    def props = new Properties()
+    def file = new File(gradle.gradleUserHomeDir, 'gradle.properties')
 
-def centralPortalPasswordProvider = providers.gradleProperty('centralPortalPassword')
-        .orElse(providers.environmentVariable('CENTRAL_PORTAL_PASSWORD'))
+    if (file.isFile()) {
+        file.withInputStream { props.load(it) }
+    }
+
+    return props.getProperty(key)
+}
+
+def centralPortalUsername =
+        providers.gradleProperty('centralPortalUsername').orNull
+                ?: providers.environmentVariable('CENTRAL_PORTAL_USERNAME').orNull
+                ?: readUserGradleProperty('centralPortalUsername')
+
+def centralPortalPassword =
+        providers.gradleProperty('centralPortalPassword').orNull
+                ?: providers.environmentVariable('CENTRAL_PORTAL_PASSWORD').orNull
+                ?: readUserGradleProperty('centralPortalPassword')
 
 def isCentralPublishTask = gradle.startParameter.taskNames.any {
     def task = it.toLowerCase()
     task.contains('centralportal') || task.contains('centralsnapshots')
 }
 
-if (isCentralPublishTask && (!centralPortalUsernameProvider.present || !centralPortalPasswordProvider.present)) {
+if (isCentralPublishTask && (!centralPortalUsername || !centralPortalPassword)) {
     throw new GradleException(
-            'Missing Central Portal credentials. Set centralPortalUsername and centralPortalPassword in ~/.gradle/gradle.properties, or use CENTRAL_PORTAL_USERNAME and CENTRAL_PORTAL_PASSWORD environment variables.'
+            "Missing Central Portal credentials. Checked Gradle user home: ${gradle.gradleUserHomeDir}/gradle.properties"
     )
 }
 
-if (centralPortalUsernameProvider.present && centralPortalPasswordProvider.present) {
+if (centralPortalUsername && centralPortalPassword) {
     nmcpSettings {
         centralPortal {
-            username = centralPortalUsernameProvider.get()
-            password = centralPortalPasswordProvider.get()
+            username = centralPortalUsername
+            password = centralPortalPassword
 
             publishingType = 'USER_MANAGED'
             publicationName = 'HostLens'
-            publishAllChecksums.set(true)
         }
     }
 }
