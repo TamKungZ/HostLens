@@ -1,7 +1,7 @@
 plugins {
     id 'java-library'
-    id 'application'
     id 'maven-publish'
+    id 'signing'
 }
 
 group = 'me.tamkungz'
@@ -22,10 +22,6 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
 }
 
-application {
-    mainClass = 'me.tamkungz.hostlens.demo.HostLensDemo'
-}
-
 tasks.named('test') {
     useJUnitPlatform()
 }
@@ -35,22 +31,28 @@ tasks.withType(JavaCompile).configureEach {
     options.release = 17
 }
 
+tasks.withType(Javadoc).configureEach {
+    options.encoding = 'UTF-8'
+    options.addStringOption('Xdoclint:none', '-quiet')
+}
+
 jar {
     archiveBaseName = 'hostlens'
 
     manifest {
         attributes(
-            'Implementation-Title': project.name,
-            'Implementation-Version': project.version,
-            'Implementation-Vendor': 'TamKungZ_',
-            'Implementation-Vendor-Id': project.group,
-            'Specification-Title': project.name,
-            'Specification-Version': project.version,
-            'Specification-Vendor': 'TamKungZ_',
-            'Built-By': System.getProperty('user.name'),
-            'Built-JDK': System.getProperty('java.version'),
-            'Created-By': "Gradle ${gradle.gradleVersion}",
-            'Automatic-Module-Name': 'me.tamkungz.hostlens'
+                'Implementation-Title': project.name,
+                'Implementation-Version': project.version,
+                'Implementation-Vendor': 'TamKungZ_',
+                'Implementation-Vendor-Id': project.group,
+                'Specification-Title': project.name,
+                'Specification-Version': project.version,
+                'Specification-Vendor': 'TamKungZ_',
+                'Built-By': System.getProperty('user.name'),
+                'Built-JDK': System.getProperty('java.version'),
+                'Built-Vendor': System.getProperty('java.vendor'),
+                'Created-By': "Gradle ${gradle.gradleVersion}",
+                'Automatic-Module-Name': 'me.tamkungz.hostlens'
         )
     }
 }
@@ -73,6 +75,7 @@ publishing {
                     license {
                         name = 'MIT License'
                         url = 'https://opensource.org/licenses/MIT'
+                        distribution = 'repo'
                     }
                 }
 
@@ -98,4 +101,17 @@ publishing {
             url = layout.buildDirectory.dir('repo')
         }
     }
+}
+
+signing {
+    def signingKey = findProperty('signingInMemoryKey')
+    def signingPassword = findProperty('signingInMemoryKeyPassword')
+
+    if (signingKey && signingPassword) {
+        useInMemoryPgpKeys(signingKey, signingPassword)
+    } else {
+        useGpgCmd()
+    }
+
+    sign publishing.publications.mavenJava
 }

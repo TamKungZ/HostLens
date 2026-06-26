@@ -5,6 +5,10 @@ pluginManagement {
     }
 }
 
+plugins {
+    id 'com.gradleup.nmcp.settings' version '1.5.0'
+}
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
 
@@ -14,3 +18,33 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = 'HostLens'
+
+def centralPortalUsernameProvider = providers.gradleProperty('centralPortalUsername')
+        .orElse(providers.environmentVariable('CENTRAL_PORTAL_USERNAME'))
+
+def centralPortalPasswordProvider = providers.gradleProperty('centralPortalPassword')
+        .orElse(providers.environmentVariable('CENTRAL_PORTAL_PASSWORD'))
+
+def isCentralPublishTask = gradle.startParameter.taskNames.any {
+    def task = it.toLowerCase()
+    task.contains('centralportal') || task.contains('centralsnapshots')
+}
+
+if (isCentralPublishTask && (!centralPortalUsernameProvider.present || !centralPortalPasswordProvider.present)) {
+    throw new GradleException(
+            'Missing Central Portal credentials. Set centralPortalUsername and centralPortalPassword in ~/.gradle/gradle.properties, or use CENTRAL_PORTAL_USERNAME and CENTRAL_PORTAL_PASSWORD environment variables.'
+    )
+}
+
+if (centralPortalUsernameProvider.present && centralPortalPasswordProvider.present) {
+    nmcpSettings {
+        centralPortal {
+            username = centralPortalUsernameProvider.get()
+            password = centralPortalPasswordProvider.get()
+
+            publishingType = 'USER_MANAGED'
+            publicationName = 'HostLens'
+            publishAllChecksums.set(true)
+        }
+    }
+}
