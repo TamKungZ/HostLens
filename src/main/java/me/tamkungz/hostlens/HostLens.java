@@ -11,11 +11,10 @@ public final class HostLens {
             new RuntimeInspector(),
             new OperatingSystemInspector(),
             new MemoryInspector(),
-            new CpuInspector()
-            // later:
-            // new GpuInspector(),
-            // new DiskInspector(),
-            // new NetworkInspector()
+            new CpuInspector(),
+            new GpuInspector(),
+            new DiskInspector(),
+            new NetworkInspector()
     );
 
     private HostLens() {
