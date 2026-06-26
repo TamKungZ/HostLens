@@ -1,37 +1,38 @@
 plugins {
-    id 'java'
+    id 'java-library'
     id 'application'
     id 'maven-publish'
 }
 
-group = 'me.tamkungz.hostlens'
+group = 'me.tamkungz'
 version = '1.0.0'
 
-description = 'HostLens Java Application'
-
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
-}
+description = 'HostLens Java Hardware Information Library'
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(17)
     }
 
     withSourcesJar()
     withJavadocJar()
 }
 
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+}
+
 application {
-    mainClass = 'me.tamkungz.hostlens.HostLens'
+    mainClass = 'me.tamkungz.hostlens.demo.HostLensDemo'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 17
 }
 
 jar {
@@ -39,14 +40,13 @@ jar {
 
     manifest {
         attributes(
-            'Main-Class': application.mainClass.get(),
             'Implementation-Title': project.name,
             'Implementation-Version': project.version,
-            'Implementation-Vendor': 'TamKungZ',
+            'Implementation-Vendor': 'TamKungZ_',
             'Implementation-Vendor-Id': project.group,
             'Specification-Title': project.name,
             'Specification-Version': project.version,
-            'Specification-Vendor': 'TamKungZ',
+            'Specification-Vendor': 'TamKungZ_',
             'Built-By': System.getProperty('user.name'),
             'Built-JDK': System.getProperty('java.version'),
             'Created-By': "Gradle ${gradle.gradleVersion}",
@@ -66,7 +66,7 @@ publishing {
 
             pom {
                 name = 'HostLens'
-                description = 'HostLens Java Application'
+                description = 'HostLens Java Hardware Information Library'
                 url = 'https://github.com/tamkungz/HostLens'
 
                 licenses {
