@@ -110,14 +110,22 @@ public final class HostLensFormatter {
         if (snapshot.memory() != null) {
             MemoryInfo memory = snapshot.memory();
             builder.append("\n[Memory]\n");
-            builder.append("Physical    : ").append(formatBytes(memory.physicalFreeBytes()))
-                    .append(" free / ").append(formatBytes(memory.physicalTotalBytes())).append(" total\n");
-            builder.append("Swap        : ").append(formatBytes(memory.swapFreeBytes()))
-                    .append(" free / ").append(formatBytes(memory.swapTotalBytes())).append(" total\n");
-            builder.append("Heap        : ").append(formatBytes(memory.heapUsedBytes()))
-                    .append(" used / ").append(formatBytes(memory.heapMaxBytes())).append(" max\n");
-            builder.append("Non-Heap    : ").append(formatBytes(memory.nonHeapUsedBytes()))
-                    .append(" used / ").append(formatBytes(memory.nonHeapCommittedBytes())).append(" committed\n");
+            builder.append("Physical    : ").append(formatMemoryUsage(memory.physicalUsedBytes(), memory.physicalTotalBytes()))
+                    .append(" / available ").append(formatBytes(memory.physicalAvailableBytes()))
+                    .append(" / free ").append(formatBytes(memory.physicalFreeBytes())).append('\n');
+            builder.append("Swap        : ").append(formatMemoryUsage(memory.swapUsedBytes(), memory.swapTotalBytes()))
+                    .append(" / free ").append(formatBytes(memory.swapFreeBytes())).append('\n');
+            builder.append("Heap        : ").append(formatJvmMemory(memory.heapUsedBytes(), memory.heapMaxBytes(), memory.heapCommittedBytes())).append('\n');
+            builder.append("Non-Heap    : ").append(formatJvmMemory(memory.nonHeapUsedBytes(), memory.nonHeapMaxBytes(), memory.nonHeapCommittedBytes())).append('\n');
+            if (memory.cgroupMemoryLimitBytes() >= 0 || memory.cgroupMemoryUsageBytes() >= 0) {
+                builder.append("Cgroup Mem  : ").append(formatMemoryUsage(memory.cgroupMemoryUsageBytes(), memory.cgroupMemoryLimitBytes())).append('\n');
+            }
+            if (memory.cgroupSwapLimitBytes() >= 0 || memory.cgroupSwapUsageBytes() >= 0) {
+                builder.append("Cgroup Swap : ").append(formatMemoryUsage(memory.cgroupSwapUsageBytes(), memory.cgroupSwapLimitBytes())).append('\n');
+            }
+            if (!isUnknown(memory.source())) {
+                builder.append("Source      : ").append(memory.source()).append('\n');
+            }
         }
 
         builder.append("\n[GPU]\n");
@@ -261,6 +269,42 @@ public final class HostLensFormatter {
             return String.format(Locale.ROOT, "%.2f GHz", value / 1000.0);
         }
         return String.format(Locale.ROOT, "%.0f MHz", value);
+    }
+
+    private static String formatMemoryUsage(long usedBytes, long totalBytes) {
+        if (usedBytes < 0 && totalBytes < 0) {
+            return "unknown";
+        }
+        StringBuilder builder = new StringBuilder();
+        builder.append(formatBytes(usedBytes)).append(" used / ").append(formatBytes(totalBytes)).append(" total");
+        String percent = formatPercentOf(usedBytes, totalBytes);
+        if (!isUnknown(percent)) {
+            builder.append(" (").append(percent).append(')');
+        }
+        return builder.toString();
+    }
+
+    private static String formatJvmMemory(long usedBytes, long maxBytes, long committedBytes) {
+        StringBuilder builder = new StringBuilder();
+        builder.append(formatBytes(usedBytes)).append(" used");
+        if (maxBytes >= 0) {
+            builder.append(" / ").append(formatBytes(maxBytes)).append(" max");
+            String percent = formatPercentOf(usedBytes, maxBytes);
+            if (!isUnknown(percent)) {
+                builder.append(" (").append(percent).append(')');
+            }
+        } else {
+            builder.append(" / unknown max");
+        }
+        builder.append(" / ").append(formatBytes(committedBytes)).append(" committed");
+        return builder.toString();
+    }
+
+    private static String formatPercentOf(long usedBytes, long totalBytes) {
+        if (usedBytes < 0 || totalBytes <= 0) {
+            return "unknown";
+        }
+        return formatPercent((double) usedBytes / (double) totalBytes);
     }
 
     private static String formatSpeedMbps(long value) {
